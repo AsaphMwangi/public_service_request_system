@@ -9,22 +9,27 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@vercel/functions": "^3.10.1",
     "botid": "^1.5.11",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "overrides": {
+    "glob": "^10.5.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
+    "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
   "allowScripts": {
-    "botid@1.5.11": true
+    "botid@1.5.11": true,
+    "unrs-resolver@1.12.2": true
   }
 }
