@@ -9,29 +9,41 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/client": "^7.10.1",
     "@vercel/functions": "^3.10.1",
     "@vercel/speed-insights": "^2.0.0",
     "botid": "^1.5.11",
+    "firebase": "^13.0.0",
     "mongodb": "^7.7.0",
+    "mongoose": "^9.11.2",
     "next": "16.4.2",
+    "nodemailer": "^10.1.7",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "react-hot-toast": "^2.6.1"
   },
   "overrides": {
     "glob": "^10.5.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
+    "@types/mongoose": "^5.11.96",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
+    "prisma": "^8.0.0-rc.23",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
   "allowScripts": {
     "botid@1.5.11": true,
-    "unrs-resolver@1.12.2": true
+    "unrs-resolver@1.12.2": true,
+    "workerd@1.20261002.1": true,
+    "esbuild@0.28.2": true,
+    "firebase@13.0.0": true,
+    "protobufjs@7.6.6": true
   }
 }
