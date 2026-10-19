@@ -71,9 +71,6 @@ export default function Home() {
     <div className="min-h-screen bg-green-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors duration-200">
       <Toaster />
       
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
       
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-extrabold text-green-800 dark:text-green-400 mb-2">Muranga County</h1>
