@@ -486,7 +486,7 @@ export default function AdminDashboard() {
             </div>
 
             <h2 className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-4 border-b-2 border-yellow-200 dark:border-yellow-700 pb-2">
-              Pending Triage
+              Pending
             </h2>
             {renderTable('Pending')}
 
