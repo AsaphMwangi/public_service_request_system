@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
 import { doc, updateDoc, getDoc } from 'firebase/firestore'
+import { sendEnginemailerEmail } from '@/lib/enginemailer'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,51 +18,57 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const requestData = updatedDoc.data()
+    const adminInbox = process.env.ADMIN_NOTIFICATION_EMAIL || 'asaphmwangi1973@gmail.com'
 
-    const subject = body.status === 'Resolved' 
+    const citizenSubject = body.status === 'Resolved' 
       ? 'Resolved: Muranga County Service Request' 
       : `Update: Muranga County Request is now ${body.status}`
       
-    const text = body.status === 'Resolved'
-      ? `Good news! Your service request for the ${requestData.category} issue at ${requestData.location} has been successfully resolved. Thank you for engaging with the Muranga County Government.`
-      : `Your service request for the ${requestData.category} issue at ${requestData.location} has been updated. The current status is now: ${body.status}.`
+    const citizenContent = body.status === 'Resolved'
+      ? `
+        <div style="font-family: sans-serif; color: #14532d;">
+          <h2>Issue Resolved</h2>
+          <p>Good news! Your service request for the <strong>${requestData.category}</strong> issue at <strong>${requestData.location}</strong> has been resolved.</p>
+          <p>Thank you for partnering with the Muranga County Government.</p>
+        </div>
+      `
+      : `
+        <div style="font-family: sans-serif; color: #14532d;">
+          <h2>Status Update</h2>
+          <p>Your service request for the <strong>${requestData.category}</strong> issue at <strong>${requestData.location}</strong> has been updated.</p>
+          <p>Current Status: <strong>${body.status}</strong></p>
+        </div>
+      `
 
-    const authString = Buffer.from(
-      `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_SECRET_KEY}`
-    ).toString('base64')
+    const adminContent = `
+      <div style="font-family: sans-serif; color: #14532d;">
+        <h2>System Status Update Log</h2>
+        <p>The status of an existing request has been updated on the dashboard:</p>
+        <ul>
+          <li><strong>Request ID:</strong> ${id}</li>
+          <li><strong>Category:</strong> ${requestData.category}</li>
+          <li><strong>Location:</strong> ${requestData.location}</li>
+          <li><strong>Citizen Email:</strong> ${requestData.userEmail}</li>
+          <li><strong>New Status:</strong> ${body.status}</li>
+        </ul>
+      </div>
+    `
 
-    const emailRes = await fetch('https://api.mailjet.com/v3.1/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authString}`
-      },
-      body: JSON.stringify({
-        Messages: [
-          {
-            From: {
-              Email: process.env.MAILJET_SENDER_EMAIL,
-              Name: 'Muranga County eCitizen'
-            },
-            To: [
-              {
-                Email: requestData.userEmail
-              }
-            ],
-            Subject: subject,
-            TextPart: text
-          }
-        ]
-      })
-    })
-
-    if (!emailRes.ok) {
-      const errorData = await emailRes.json()
-      console.error(errorData)
-    }
+    await Promise.all([
+      sendEnginemailerEmail(
+        requestData.userEmail,
+        citizenSubject,
+        citizenContent
+      ),
+      sendEnginemailerEmail(
+        adminInbox,
+        `Status Updated to ${body.status}: ${requestData.category}`,
+        adminContent
+      )
+    ])
 
     return NextResponse.json({ success: true, data: { _id: id, ...requestData } }, { status: 200 })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  }  
+  }
 }

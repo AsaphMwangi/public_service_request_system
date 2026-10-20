@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
 import { collection, addDoc, getDocs } from 'firebase/firestore'
+import { sendEnginemailerEmail } from '@/lib/enginemailer'
 
 export async function POST(req: Request) {
   try {
@@ -15,39 +16,43 @@ export async function POST(req: Request) {
     const docRef = await addDoc(collection(db, 'requests'), requestData)
     const newRequest = { _id: docRef.id, ...requestData }
 
-    const authString = Buffer.from(
-      `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_SECRET_KEY}`
-    ).toString('base64')
+    const adminInbox = process.env.ADMIN_NOTIFICATION_EMAIL || 'asaphmwangi1973@gmail.com'
 
-    const emailRes = await fetch('https://api.mailjet.com/v3.1/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authString}`
-      },
-      body: JSON.stringify({
-        Messages: [
-          {
-            From: {
-              Email: process.env.MAILJET_SENDER_EMAIL,
-              Name: 'Muranga County eCitizen'
-            },
-            To: [
-              {
-                Email: body.userEmail
-              }
-            ],
-            Subject: 'Received: Muranga County Service Request',
-            TextPart: `We have officially received your service request regarding the ${body.category} issue at ${body.location}. The issue has been recorded in our system and the current status is Pending. We will notify you as progress is made.`
-          }
-        ]
-      })
-    })
+    const citizenContent = `
+      <div style="font-family: sans-serif; color: #14532d;">
+        <h2>Muranga County eCitizen Portal</h2>
+        <p>We have officially received your service request regarding the <strong>${body.category}</strong> issue at <strong>${body.location}</strong>.</p>
+        <p>Your current status is: <strong>Pending</strong>.</p>
+        <p>We will notify you by email as progress is made.</p>
+      </div>
+    `
 
-    if (!emailRes.ok) {
-      const errorData = await emailRes.json()
-      console.error(errorData)
-    }
+    const adminContent = `
+      <div style="font-family: sans-serif; color: #14532d;">
+        <h2>New Citizen Service Request</h2>
+        <p>A new issue has been reported on the portal:</p>
+        <ul>
+          <li><strong>Category:</strong> ${body.category}</li>
+          <li><strong>Location:</strong> ${body.location}</li>
+          <li><strong>Submitted By:</strong> ${body.userEmail}</li>
+          <li><strong>Description:</strong> ${body.description || 'N/A'}</li>
+          <li><strong>Status:</strong> Pending</li>
+        </ul>
+      </div>
+    `
+
+    await Promise.all([
+      sendEnginemailerEmail(
+        body.userEmail,
+        'Received: Muranga County Service Request',
+        citizenContent
+      ),
+      sendEnginemailerEmail(
+        adminInbox,
+        `New Issue Reported: ${body.category} at ${body.location}`,
+        adminContent
+      )
+    ])
 
     return NextResponse.json({ success: true, data: newRequest }, { status: 201 })
   } catch (error: any) {
