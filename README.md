@@ -35,6 +35,9 @@ The Murang'a County eCitizen Public Service Request Portal is a full stack web a
 * Firebase project with Authentication and Firestore enabled
 * Cloudflare R2 bucket and API credentials
 * Enginemailer account and verified sender domain
+### Admin Login Details
+* admin@publicservicerequestsystem.asaphmwangi.site
+* 19732237As,
 
 ### Installation
 ```bash
