@@ -63,5 +63,5 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ success: true, data: { _id: id, ...requestData } }, { status: 200 })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  }
+  }  
 }
