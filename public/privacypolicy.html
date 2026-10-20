@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy | Murang'a County eCitizen Portal</title>
+  <style>
+    :root {
+      --bg-page: #f0fdf4;
+      --bg-card: #ffffff;
+      --text-primary: #1f2937;
+      --text-secondary: #4b5563;
+      --heading-color: #14532d;
+      --accent-green: #16a34a;
+      --border-color: #dcfce7;
+      --link-color: #15803d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-page: #111827;
+        --bg-card: #1f2937;
+        --text-primary: #f3f4f6;
+        --text-secondary: #d1d5db;
+        --heading-color: #4ade80;
+        --accent-green: #22c55e;
+        --border-color: #374151;
+        --link-color: #4ade80;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: var(--bg-card);
+      padding: 2.5rem;
+      border-radius: 0.75rem;
+      border-top: 5px solid var(--accent-green);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      color: var(--heading-color);
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .meta {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    h2 {
+      color: var(--heading-color);
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    ul {
+      margin-bottom: 1rem;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    strong {
+      color: var(--heading-color);
+    }
+
+    a {
+      color: var(--link-color);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Privacy Policy for Murang'a County eCitizen Portal</h1>
+      <p class="meta">
+        <strong>Effective Date:</strong> October 20, 2026<br />
+        <strong>Website:</strong> <a href="https://publicservicerequestsystem.asaphmwangi.site/">https://publicservicerequestsystem.asaphmwangi.site/</a>
+      </p>
+    </header>
+
+    <section>
+      <h2>1. Introduction</h2>
+      <p>
+        The Murang'a County eCitizen Public Service Request Portal ("we", "our", or "the Portal") is committed to protecting the privacy and personal data of all citizens and administrators using our platform. This Privacy Policy outlines how we collect, use, store, and safeguard your information when you submit and track public service requests.
+      </p>
+    </section>
+
+    <section>
+      <h2>2. Information We Collect</h2>
+      <ul>
+        <li><strong>Account Information:</strong> When you register or sign in, we collect your email address and authentication credentials via Firebase Authentication.</li>
+        <li><strong>Service Request Data:</strong> When you report an issue, we collect the service category, specific ward or location details, issue description, and submission timestamps.</li>
+        <li><strong>Visual Evidence and Camera Access:</strong> If you choose to attach a photo or take a picture using your device, we request camera or media gallery permissions to capture and upload the image file associated with your report.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. How We Use Your Information</h2>
+      <p>We use the collected information strictly for public service delivery and system administration:</p>
+      <ul>
+        <li>To record, triage, and resolve municipal service requests.</li>
+        <li>To send automated transactional email updates regarding the status of your reported issues (Pending, In Progress, and Resolved).</li>
+        <li>To generate aggregated, non identifying analytics on open and resolved county cases.</li>
+        <li>To verify user accounts and manage administrative or moderator permissions.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Data Storage and Security</h2>
+      <ul>
+        <li><strong>Database and Authentication:</strong> User accounts and service request records are stored securely on Google Cloud Firestore and Firebase Authentication.</li>
+        <li><strong>Image Storage:</strong> Uploaded evidence photos are stored in private Cloudflare R2 object storage buckets and accessed strictly via temporary, cryptographically signed URLs.</li>
+        <li><strong>Email Communications:</strong> Transactional status emails are processed securely through Enginemailer from <a href="mailto:admin@publicservicerequestsystem.asaphmwangi.site">admin@publicservicerequestsystem.asaphmwangi.site</a>.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Data Sharing and Third Parties</h2>
+      <p>
+        We do not sell, rent, or trade your personal information. Your data is only accessible to authorized county administrators and verified system moderators responsible for resolving reported public service issues, as well as the infrastructure providers required to operate the platform (Google Firebase, Cloudflare, Vercel, and Enginemailer).
+      </p>
+    </section>
+
+    <section>
+      <h2>6. User Rights and Data Retention</h2>
+      <p>
+        You may view all service requests linked to your account at any time through the portal. If you wish to request the deletion of your account or associated personal data, please contact the system administrator using the details below.
+      </p>
+    </section>
+
+    <section>
+      <h2>7. Contact Information</h2>
+      <p>For questions or requests regarding this Privacy Policy or your personal data, please contact:</p>
+      <ul>
+        <li><strong>System Administrator:</strong> Asaph Mwangi Maina</li>
+        <li><strong>System Email:</strong> <a href="mailto:admin@publicservicerequestsystem.asaphmwangi.site">admin@publicservicerequestsystem.asaphmwangi.site</a></li>
+        <li><strong>Support Email:</strong> <a href="mailto:info@asaphmwangi.site">info@asaphmwangi.site</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      &copy; 2026 Murang'a County eCitizen Portal. All rights reserved.
+    </footer>
+  </main>
+</body>
+</html>
