@@ -13,6 +13,7 @@ interface RequestItem {
   status: string
   description: string
   createdAt: string
+  imageUrl?: string
 }
 
 export default function MyRequests() {
@@ -44,6 +45,7 @@ export default function MyRequests() {
       setIsLoading(false)
     }
   }
+  
 
   if (!isAuthenticated) return null
 
@@ -91,6 +93,15 @@ export default function MyRequests() {
                   </span>
                 </div>
                 <p className="text-gray-700 mb-2">{request.description}</p>
+                  {request.imageUrl && (
+                  <a href={request.imageUrl} target="_blank" rel="noopener noreferrer">
+                  <img 
+                        src={request.imageUrl} 
+                        alt={request.category} 
+                        className="mt-3 mb-3 w-full max-h-56 object-cover rounded border border-green-200"
+                    />
+                  </a>
+    )}
                 <p className="text-sm text-green-500">
                   Submitted on {new Date(request.createdAt).toLocaleDateString()}
                 </p>

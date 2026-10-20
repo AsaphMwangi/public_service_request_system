@@ -13,6 +13,7 @@ interface RequestItem {
   status: string
   createdAt: string
   userEmail: string
+  imageUrl?: string
 }
 
 interface ModeratorItem {
@@ -162,6 +163,7 @@ export default function AdminDashboard() {
               <th className="p-4">Citizen Email</th>
               <th className="p-4">Date Submitted</th>
               <th className="p-4">Modify Status</th>
+              <th className="p-4">Photo</th>
             </tr>
           </thead>
           <tbody>
@@ -172,6 +174,15 @@ export default function AdminDashboard() {
                 <td className="p-4 text-green-800">{request.userEmail}</td>
                 <td className="p-4 text-green-800">
                   {new Date(request.createdAt).toLocaleDateString()}
+                </td>
+                <td className="p-4">
+                  {request.imageUrl ? (
+                 <a href={request.imageUrl} target="_blank" rel="noopener noreferrer" className="text-green-700 underline font-semibold">
+                <img src={request.imageUrl} alt="Issue" className="h-12 w-16 object-cover rounded border border-green-300" />
+                  </a>
+                  ) : (
+                    <span className="text-gray-400 text-sm">No Photo</span>
+                      )}
                 </td>
                 <td className="p-4">
                   <div className="flex items-center space-x-3">
@@ -217,7 +228,7 @@ export default function AdminDashboard() {
           onClick={() => auth.signOut()} 
           className="bg-green-800 text-white px-4 py-2 rounded hover:bg-green-900 transition"
         >
-          Logout System
+          Logout
         </button>
       </div>
 
@@ -297,7 +308,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-yellow-600 mb-4 border-b-2 border-yellow-200 pb-2">Pending Triage</h2>
+          <h2 className="text-2xl font-bold text-yellow-600 mb-4 border-b-2 border-yellow-200 pb-2">Pending</h2>
           {renderTable('Pending')}
 
           <h2 className="text-2xl font-bold text-blue-600 mb-4 border-b-2 border-blue-200 pb-2">Currently In Progress</h2>
