@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
 import { collection, addDoc, getDocs } from 'firebase/firestore'
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: Request) {
   try {
@@ -18,15 +15,38 @@ export async function POST(req: Request) {
     const docRef = await addDoc(collection(db, 'requests'), requestData)
     const newRequest = { _id: docRef.id, ...requestData }
 
-    try {
-      await resend.emails.send({
-        from: 'Acme <onboarding@resend.dev>',
-        to: body.userEmail,
-        subject: 'Received: Muranga County Service Request',
-        text: `We have officially received your service request regarding the ${body.category} issue at ${body.location}. The issue has been recorded in our system and the current status is Pending. We will notify you as progress is made.`
+    const authString = Buffer.from(
+      `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_SECRET_KEY}`
+    ).toString('base64')
+
+    const emailRes = await fetch('https://api.mailjet.com/v3.1/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${authString}`
+      },
+      body: JSON.stringify({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_SENDER_EMAIL,
+              Name: 'Muranga County eCitizen'
+            },
+            To: [
+              {
+                Email: body.userEmail
+              }
+            ],
+            Subject: 'Received: Muranga County Service Request',
+            TextPart: `We have officially received your service request regarding the ${body.category} issue at ${body.location}. The issue has been recorded in our system and the current status is Pending. We will notify you as progress is made.`
+          }
+        ]
       })
-    } catch (emailError) {
-      console.error(emailError)
+    })
+
+    if (!emailRes.ok) {
+      const errorData = await emailRes.json()
+      console.error(errorData)
     }
 
     return NextResponse.json({ success: true, data: newRequest }, { status: 201 })

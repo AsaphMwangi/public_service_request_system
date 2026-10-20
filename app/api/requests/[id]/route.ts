@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
 import { doc, updateDoc, getDoc } from 'firebase/firestore'
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -29,16 +26,38 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       ? `Good news! Your service request for the ${requestData.category} issue at ${requestData.location} has been successfully resolved. Thank you for engaging with the Muranga County Government.`
       : `Your service request for the ${requestData.category} issue at ${requestData.location} has been updated. The current status is now: ${body.status}.`
 
-    const { error } = await resend.emails.send({
-      from: 'Acme <onboarding@resend.dev>',
-      to: requestData.userEmail,
-      subject,
-      text
+    const authString = Buffer.from(
+      `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_SECRET_KEY}`
+    ).toString('base64')
+
+    const emailRes = await fetch('https://api.mailjet.com/v3.1/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${authString}`
+      },
+      body: JSON.stringify({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_SENDER_EMAIL,
+              Name: 'Muranga County eCitizen'
+            },
+            To: [
+              {
+                Email: requestData.userEmail
+              }
+            ],
+            Subject: subject,
+            TextPart: text
+          }
+        ]
+      })
     })
 
-    if (error) {
-      console.error(error)
-      return NextResponse.json({ success: true, data: { _id: id, ...requestData }, emailError: error.message }, { status: 200 })
+    if (!emailRes.ok) {
+      const errorData = await emailRes.json()
+      console.error(errorData)
     }
 
     return NextResponse.json({ success: true, data: { _id: id, ...requestData } }, { status: 200 })
