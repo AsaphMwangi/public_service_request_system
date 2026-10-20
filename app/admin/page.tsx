@@ -2,7 +2,7 @@
 
 import { useEffect, useState, FormEvent } from 'react'
 import { auth } from '@/lib/firebase'
-import { onAuthStateChanged } from 'firebase/auth'
+import { onAuthStateChanged, updatePassword, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
 
@@ -30,6 +30,10 @@ export default function AdminDashboard() {
   const [isMainAdmin, setIsMainAdmin] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -124,6 +128,45 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleChangePassword = async (e: FormEvent) => {
+    e.preventDefault()
+    const user = auth.currentUser
+    if (!user || !user.email) return
+
+    setIsUpdatingPassword(true)
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword)
+      await reauthenticateWithCredential(user, credential)
+      await updatePassword(user, newPassword)
+      toast.success('Password updated successfully')
+      setShowPasswordModal(false)
+      setCurrentPassword('')
+      setNewPassword('')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update password. Check current password.')
+    } finally {
+      setIsUpdatingPassword(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    const user = auth.currentUser
+    if (!user || !user.email) return
+
+    const pwd = prompt('Enter your current password to confirm account deletion:')
+    if (!pwd) return
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, pwd)
+      await reauthenticateWithCredential(user, credential)
+      await deleteUser(user)
+      toast.success('Account deleted successfully')
+      router.push('/')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete account. Incorrect password.')
+    }
+  }
+
   const updateStatus = async (id: string, newStatus: string) => {
     setUpdatingId(id)
     try {
@@ -155,7 +198,6 @@ export default function AdminDashboard() {
 
     return (
       <div className="mb-12">
-        {/* Mobile View: Stacked Cards showing all fields clearly */}
         <div className="grid grid-cols-1 gap-4 md:hidden">
           {filtered.map(request => (
             <div key={request._id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-green-200 dark:border-gray-700 space-y-3">
@@ -220,7 +262,6 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Desktop View: Full Table */}
         <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -288,121 +329,183 @@ export default function AdminDashboard() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-green-50 dark:bg-gray-900 p-4 sm:p-8 transition-colors duration-200">
+    <div className="min-h-screen bg-green-50 dark:bg-gray-900 p-4 sm:p-8 flex flex-col justify-between transition-colors duration-200">
       <Toaster />
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-green-100 dark:border-gray-700">
-        <h1 className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-400 text-center sm:text-left">
-          County Admin Dashboard
-        </h1>
-        <button 
-          type="button"
-          onClick={() => auth.signOut()} 
-          className="w-full sm:w-auto bg-red-600 text-white font-semibold px-5 py-2.5 rounded hover:bg-red-700 transition"
-        >
-          Logout
-        </button>
-      </div>
-
-      {isInitialLoading ? (
-        <div className="flex justify-center items-center py-32">
-          <svg className="animate-spin h-16 w-16 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        </div>
-      ) : (
-        <>
-          {isMainAdmin && (
-            <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow mb-8 sm:mb-12 border-t-4 border-yellow-500">
-              <h2 className="text-lg sm:text-xl font-bold text-green-900 dark:text-white mb-4">
-                Manage System Moderators
-              </h2>
-              <form onSubmit={handleAddModerator} className="flex flex-col sm:flex-row gap-3 mb-6">
-                <input 
-                  type="email" 
-                  placeholder="Enter email to grant moderator access" 
-                  className="flex-1 border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  value={newModEmail}
-                  onChange={(e) => setNewModEmail(e.target.value)}
-                  required
-                />
-                <button 
-                  type="submit" 
-                  className="w-full sm:w-auto bg-yellow-600 text-white font-bold py-3 px-6 rounded hover:bg-yellow-700 transition"
-                >
-                  Add Moderator
-                </button>
-              </form>
-              
-              {moderators.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {moderators.map(mod => (
-                    <div key={mod._id} className="bg-green-50 dark:bg-gray-700 p-3 sm:p-4 rounded border border-green-200 dark:border-gray-600 flex justify-between items-center gap-2 shadow-sm">
-                      <span className="text-gray-900 dark:text-white font-medium text-sm break-all">{mod.email}</span>
-                      <button 
-                        type="button"
-                        onClick={() => handleRemoveModerator(mod._id)}
-                        className="bg-red-600 text-white hover:bg-red-700 font-semibold py-1.5 px-3 rounded transition text-xs shrink-0"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow mb-8 sm:mb-12 border-t-4 border-green-700">
-            <h2 className="text-lg sm:text-xl font-bold text-green-900 dark:text-white mb-4 sm:mb-6">
-              Service Request Analytics
-            </h2>
+      <div className="max-w-7xl mx-auto w-full">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-green-100 dark:border-gray-700">
+          <h1 className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-400 text-center sm:text-left">
+            County Admin Dashboard
+          </h1>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button 
+              type="button"
+              onClick={() => setShowPasswordModal(true)} 
+              className="bg-yellow-600 text-white font-semibold px-3.5 py-2 rounded hover:bg-yellow-700 transition text-sm"
+            >
+              Change Password
+            </button>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 dark:bg-gray-700 p-4 sm:p-6 rounded-lg border border-green-200 dark:border-gray-600 text-center">
-                <p className="text-xs sm:text-sm font-bold text-green-700 dark:text-green-400 uppercase tracking-wide">Total Requests</p>
-                <p className="text-3xl sm:text-4xl font-extrabold text-green-900 dark:text-white mt-1">{totalCases}</p>
-              </div>
-              <div className="bg-yellow-50 dark:bg-gray-700 p-4 sm:p-6 rounded-lg border border-yellow-200 dark:border-gray-600 text-center">
-                <p className="text-xs sm:text-sm font-bold text-yellow-700 dark:text-yellow-400 uppercase tracking-wide">Open Cases</p>
-                <p className="text-3xl sm:text-4xl font-extrabold text-yellow-900 dark:text-white mt-1">{openCases}</p>
-              </div>
-              <div className="bg-green-100 dark:bg-gray-700 p-4 sm:p-6 rounded-lg border border-green-300 dark:border-gray-600 text-center">
-                <p className="text-xs sm:text-sm font-bold text-green-800 dark:text-green-300 uppercase tracking-wide">Resolved Cases</p>
-                <p className="text-3xl sm:text-4xl font-extrabold text-green-900 dark:text-white mt-1">{resolvedCases}</p>
-              </div>
-            </div>
+            <button 
+              type="button"
+              onClick={() => auth.signOut()} 
+              className="border border-green-700 text-green-800 dark:text-green-300 font-semibold px-3.5 py-2 rounded hover:bg-green-100 dark:hover:bg-gray-700 transition text-sm"
+            >
+              Logout System
+            </button>
+          </div>
+        </div>
 
-            <div>
-              <div className="flex justify-between text-sm font-bold text-green-800 dark:text-gray-200 mb-2">
-                <span>Resolution Progress</span>
-                <span>{resolvedPercentage}%</span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
-                <div 
-                  className="bg-green-600 h-4 rounded-full transition-all duration-500" 
-                  style={{ width: `${resolvedPercentage}%` }}
-                ></div>
-              </div>
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full shadow-lg border-t-4 border-yellow-500">
+              <h2 className="text-xl font-bold text-green-900 dark:text-white mb-4">Change Password</h2>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Current Password</label>
+                  <input 
+                    type="password"
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                  <input 
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setShowPasswordModal(false)}
+                    className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded font-semibold text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isUpdatingPassword}
+                    className="px-4 py-2 bg-green-600 text-white rounded font-semibold text-sm hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
+        )}
 
-          <h2 className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-4 border-b-2 border-yellow-200 dark:border-yellow-700 pb-2">
-            Pending Triage
-          </h2>
-          {renderTable('Pending')}
+        {isInitialLoading ? (
+          <div className="flex justify-center items-center py-32">
+            <svg className="animate-spin h-16 w-16 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        ) : (
+          <>
+            {isMainAdmin && (
+              <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow mb-8 sm:mb-12 border-t-4 border-yellow-500">
+                <h2 className="text-lg sm:text-xl font-bold text-green-900 dark:text-white mb-4">
+                  Manage System Moderators
+                </h2>
+                <form onSubmit={handleAddModerator} className="flex flex-col sm:flex-row gap-3 mb-6">
+                  <input 
+                    type="email" 
+                    placeholder="Enter email to grant moderator access" 
+                    className="flex-1 border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    value={newModEmail}
+                    onChange={(e) => setNewModEmail(e.target.value)}
+                    required
+                  />
+                  <button 
+                    type="submit" 
+                    className="w-full sm:w-auto bg-yellow-600 text-white font-bold py-3 px-6 rounded hover:bg-yellow-700 transition"
+                  >
+                    Add Moderator
+                  </button>
+                </form>
+                
+                {moderators.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {moderators.map(mod => (
+                      <div key={mod._id} className="bg-green-50 dark:bg-gray-700 p-3 sm:p-4 rounded border border-green-200 dark:border-gray-600 flex justify-between items-center gap-2 shadow-sm">
+                        <span className="text-gray-900 dark:text-white font-medium text-sm break-all">{mod.email}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveModerator(mod._id)}
+                          className="bg-red-600 text-white hover:bg-red-700 font-semibold py-1.5 px-3 rounded transition text-xs shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-          <h2 className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4 border-b-2 border-blue-200 dark:border-blue-700 pb-2">
-            Currently In Progress
-          </h2>
-          {renderTable('In Progress')}
+            <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow mb-8 sm:mb-12 border-t-4 border-green-700">
+              <h2 className="text-lg sm:text-xl font-bold text-green-900 dark:text-white mb-4 sm:mb-6">
+                Service Request Analytics
+              </h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div className="bg-green-50 dark:bg-gray-700 p-4 sm:p-6 rounded-lg border border-green-200 dark:border-gray-600 text-center">
+                  <p className="text-xs sm:text-sm font-bold text-green-700 dark:text-green-400 uppercase tracking-wide">Total Requests</p>
+                  <p className="text-3xl sm:text-4xl font-extrabold text-green-900 dark:text-white mt-1">{totalCases}</p>
+                </div>
+                <div className="bg-yellow-50 dark:bg-gray-700 p-4 sm:p-6 rounded-lg border border-yellow-200 dark:border-gray-600 text-center">
+                  <p className="text-xs sm:text-sm font-bold text-yellow-700 dark:text-yellow-400 uppercase tracking-wide">Open Cases</p>
+                  <p className="text-3xl sm:text-4xl font-extrabold text-yellow-900 dark:text-white mt-1">{openCases}</p>
+                </div>
+                <div className="bg-green-100 dark:bg-gray-700 p-4 sm:p-6 rounded-lg border border-green-300 dark:border-gray-600 text-center">
+                  <p className="text-xs sm:text-sm font-bold text-green-800 dark:text-green-300 uppercase tracking-wide">Resolved Cases</p>
+                  <p className="text-3xl sm:text-4xl font-extrabold text-green-900 dark:text-white mt-1">{resolvedCases}</p>
+                </div>
+              </div>
 
-          <h2 className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-400 mb-4 border-b-2 border-green-200 dark:border-green-700 pb-2">
-            Resolved Issues
-          </h2>
-          {renderTable('Resolved')}
-        </>
-      )}
+              <div>
+                <div className="flex justify-between text-sm font-bold text-green-800 dark:text-gray-200 mb-2">
+                  <span>Resolution Progress</span>
+                  <span>{resolvedPercentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+                  <div 
+                    className="bg-green-600 h-4 rounded-full transition-all duration-500" 
+                    style={{ width: `${resolvedPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-4 border-b-2 border-yellow-200 dark:border-yellow-700 pb-2">
+              Pending Triage
+            </h2>
+            {renderTable('Pending')}
+
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4 border-b-2 border-blue-200 dark:border-blue-700 pb-2">
+              Currently In Progress
+            </h2>
+            {renderTable('In Progress')}
+
+            <h2 className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-400 mb-4 border-b-2 border-green-200 dark:border-green-700 pb-2">
+              Resolved Issues
+            </h2>
+            {renderTable('Resolved')}
+          </>
+        )}
+      </div>
+
+      <footer className="mt-12 text-center text-sm text-green-800 dark:text-gray-400 py-4 border-t border-green-200 dark:border-gray-800">
+        <p>&copy; 2026 Murang'a County eCitizen Portal. All rights reserved. | <a href="https://publicservicerequestsystem.asaphmwangi.site/privacypolicy.html" target="_blank" rel="noopener noreferrer" className="underline font-semibold hover:text-green-600">Privacy Policy</a></p>
+      </footer>
     </div>
   )
 }

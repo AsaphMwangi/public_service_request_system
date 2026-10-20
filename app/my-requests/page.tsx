@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, FormEvent } from 'react'
 import { auth } from '@/lib/firebase'
-import { onAuthStateChanged } from 'firebase/auth'
+import { onAuthStateChanged, updatePassword, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import toast, { Toaster } from 'react-hot-toast'
 
 interface RequestItem {
   _id: string
@@ -19,6 +20,10 @@ interface RequestItem {
 export default function MyRequests() {
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -44,6 +49,45 @@ export default function MyRequests() {
     }
   }
 
+  const handleChangePassword = async (e: FormEvent) => {
+    e.preventDefault()
+    const user = auth.currentUser
+    if (!user || !user.email) return
+
+    setIsUpdatingPassword(true)
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword)
+      await reauthenticateWithCredential(user, credential)
+      await updatePassword(user, newPassword)
+      toast.success('Password updated successfully')
+      setShowPasswordModal(false)
+      setCurrentPassword('')
+      setNewPassword('')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update password. Check current password.')
+    } finally {
+      setIsUpdatingPassword(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    const user = auth.currentUser
+    if (!user || !user.email) return
+
+    const pwd = prompt('Enter your current password to confirm account deletion:')
+    if (!pwd) return
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, pwd)
+      await reauthenticateWithCredential(user, credential)
+      await deleteUser(user)
+      toast.success('Account deleted successfully')
+      router.push('/')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete account. Incorrect password.')
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     if (status === 'Resolved') {
       return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border border-green-300'
@@ -55,28 +99,89 @@ export default function MyRequests() {
   }
 
   return (
-    <div className="min-h-screen bg-green-50 dark:bg-gray-900 p-4 sm:p-8 transition-colors duration-200">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-green-50 dark:bg-gray-900 p-4 sm:p-8 flex flex-col justify-between transition-colors duration-200">
+      <Toaster />
+      <div className="max-w-5xl mx-auto w-full">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-green-100 dark:border-gray-700">
           <h1 className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-400 text-center sm:text-left">
             My Service Requests
           </h1>
-          <div className="grid grid-cols-2 sm:flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <Link 
               href="/submit" 
-              className="bg-green-600 text-white text-center font-semibold px-4 py-2.5 rounded hover:bg-green-700 transition text-sm sm:text-base"
+              className="bg-green-600 text-white font-semibold px-3.5 py-2 rounded hover:bg-green-700 transition text-sm"
             >
               + New Request
             </Link>
             <button 
               type="button"
+              onClick={() => setShowPasswordModal(true)} 
+              className="bg-yellow-600 text-white font-semibold px-3.5 py-2 rounded hover:bg-yellow-700 transition text-sm"
+            >
+              Change Password
+            </button>
+            <button 
+              type="button"
+              onClick={handleDeleteAccount} 
+              className="bg-red-600 text-white font-semibold px-3.5 py-2 rounded hover:bg-red-700 transition text-sm"
+            >
+              Delete Account
+            </button>
+            <button 
+              type="button"
               onClick={() => auth.signOut()} 
-              className="bg-red-600 text-white font-semibold px-4 py-2.5 rounded hover:bg-red-700 transition text-sm sm:text-base"
+              className="border border-green-700 text-green-800 dark:text-green-300 font-semibold px-3.5 py-2 rounded hover:bg-green-100 dark:hover:bg-gray-700 transition text-sm"
             >
               Logout
             </button>
           </div>
         </div>
+
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full shadow-lg border-t-4 border-yellow-500">
+              <h2 className="text-xl font-bold text-green-900 dark:text-white mb-4">Change Password</h2>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Current Password</label>
+                  <input 
+                    type="password"
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                  <input 
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setShowPasswordModal(false)}
+                    className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded font-semibold text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isUpdatingPassword}
+                    className="px-4 py-2 bg-green-600 text-white rounded font-semibold text-sm hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center items-center py-24">
@@ -138,6 +243,10 @@ export default function MyRequests() {
           </div>
         )}
       </div>
+
+      <footer className="mt-12 text-center text-sm text-green-800 dark:text-gray-400 py-4 border-t border-green-200 dark:border-gray-800">
+        <p>&copy; 2026 Murang'a County eCitizen Portal. All rights reserved. | <a href="https://publicservicerequestsystem.asaphmwangi.site/privacypolicy.html" target="_blank" rel="noopener noreferrer" className="underline font-semibold hover:text-green-600">Privacy Policy</a></p>
+      </footer>
     </div>
   )
 }
