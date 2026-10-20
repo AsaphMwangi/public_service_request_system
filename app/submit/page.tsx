@@ -6,11 +6,10 @@ import { onAuthStateChanged, User } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast, { Toaster } from 'react-hot-toast'
-import ThemeToggle from '@/components/ThemeToggle'
 
 export default function SubmitRequest() {
   const [user, setUser] = useState<User | null>(null)
-  const [category, setCategory] = useState('Roads & Transport')
+  const [category, setCategory] = useState('')
   const [location, setLocation] = useState('')
   const [description, setDescription] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -110,6 +109,12 @@ export default function SubmitRequest() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!user) return
+
+    if (!category) {
+      toast.error('Please choose a service category')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -123,7 +128,7 @@ export default function SubmitRequest() {
         const uploadData = await uploadRes.json()
 
         if (!uploadRes.ok || !uploadData.success) {
-          throw new Error(uploadData.error || 'Failed to upload image to Vercel')
+          throw new Error(uploadData.error || 'Failed to upload image')
         }
         uploadedImageUrl = uploadData.url
       }
@@ -143,6 +148,10 @@ export default function SubmitRequest() {
 
       if (res.ok) {
         toast.success('Service request submitted successfully')
+        setCategory('')
+        setLocation('')
+        setDescription('')
+        clearSelectedImage()
         router.push('/my-requests')
       } else {
         toast.error('Failed to submit service request')
@@ -157,41 +166,56 @@ export default function SubmitRequest() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-green-50 dark:bg-gray-900 p-6 transition-colors duration-200">
+    <div className="min-h-screen bg-green-50 dark:bg-gray-900 p-4 sm:p-6 transition-colors duration-200">
       <Toaster />
       <div className="max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-green-900 dark:text-green-400">Report an Issue</h1>
-          <div className="flex items-center space-x-3">
-            <ThemeToggle />
-            <Link href="/my-requests" className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition">
-              My Requests
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-green-100 dark:border-gray-700">
+          <h1 className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-400 text-center sm:text-left">
+            Report an Issue
+          </h1>
+          <div className="grid grid-cols-2 sm:flex items-center gap-3 w-full sm:w-auto">
+            <Link 
+              href="/my-requests" 
+              className="bg-green-700 text-white text-center font-semibold px-4 py-2.5 rounded hover:bg-green-800 transition text-sm sm:text-base"
+            >
+              View My Requests
             </Link>
-            <button onClick={() => auth.signOut()} className="border border-green-700 dark:border-green-400 text-green-800 dark:text-green-400 px-4 py-2 rounded hover:bg-green-100 dark:hover:bg-gray-800 transition">
+            <button 
+              type="button"
+              onClick={() => auth.signOut()} 
+              className="bg-red-600 text-white font-semibold px-4 py-2.5 rounded hover:bg-red-700 transition text-sm sm:text-base"
+            >
               Logout
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md border-t-4 border-green-600 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-5 sm:p-8 rounded-lg shadow-md border-t-4 border-green-600 space-y-6">
           <div>
-            <label className="block text-green-800 dark:text-gray-200 font-bold mb-2">Service Category</label>
+            <label className="block text-green-800 dark:text-gray-200 font-bold mb-2 text-sm sm:text-base">
+              Service Category
+            </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
+              required
               className="w-full border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
               disabled={isSubmitting}
             >
+              <option value="" disabled>Choose Category</option>
               <option value="Roads & Transport">Roads & Transport</option>
               <option value="Water & Sanitation">Water & Sanitation</option>
               <option value="Waste Management">Waste Management</option>
               <option value="Street Lighting">Street Lighting</option>
               <option value="Public Health">Public Health</option>
+              <option value="Other">Other</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-green-800 dark:text-gray-200 font-bold mb-2">Specific Location / Ward</label>
+            <label className="block text-green-800 dark:text-gray-200 font-bold mb-2 text-sm sm:text-base">
+              Specific Location / Ward
+            </label>
             <input
               type="text"
               placeholder="e.g. Mukuyu Market, Kiharu"
@@ -199,12 +223,14 @@ export default function SubmitRequest() {
               onChange={(e) => setLocation(e.target.value)}
               required
               disabled={isSubmitting}
-              className="w-full border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
 
           <div>
-            <label className="block text-green-800 dark:text-gray-200 font-bold mb-2">Issue Description</label>
+            <label className="block text-green-800 dark:text-gray-200 font-bold mb-2 text-sm sm:text-base">
+              Issue Description
+            </label>
             <textarea
               rows={4}
               placeholder="Describe the issue in detail..."
@@ -212,12 +238,14 @@ export default function SubmitRequest() {
               onChange={(e) => setDescription(e.target.value)}
               required
               disabled={isSubmitting}
-              className="w-full border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
 
           <div>
-            <label className="block text-green-800 dark:text-gray-200 font-bold mb-2">Attach Evidence Photo (Optional)</label>
+            <label className="block text-green-800 dark:text-gray-200 font-bold mb-2 text-sm sm:text-base">
+              Attach Evidence Photo (Optional)
+            </label>
             
             <input
               type="file"
@@ -236,12 +264,12 @@ export default function SubmitRequest() {
               className="hidden"
             />
 
-            <div className="flex flex-wrap gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <button
                 type="button"
                 onClick={() => galleryInputRef.current?.click()}
                 disabled={isSubmitting}
-                className="flex-1 bg-green-100 dark:bg-gray-700 text-green-800 dark:text-green-300 font-semibold py-3 px-4 rounded border border-green-400 dark:border-gray-600 hover:bg-green-200 dark:hover:bg-gray-600 transition"
+                className="w-full bg-green-100 dark:bg-gray-700 text-green-900 dark:text-green-300 font-semibold py-3 px-4 rounded border border-green-400 dark:border-gray-600 hover:bg-green-200 dark:hover:bg-gray-600 transition"
               >
                 Choose from Gallery
               </button>
@@ -250,32 +278,32 @@ export default function SubmitRequest() {
                 type="button"
                 onClick={startCamera}
                 disabled={isSubmitting}
-                className="flex-1 bg-green-600 text-white font-semibold py-3 px-4 rounded hover:bg-green-700 transition"
+                className="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded hover:bg-green-700 transition"
               >
                 Take a Picture
               </button>
             </div>
 
             {isCameraOpen && (
-              <div className="bg-black p-4 rounded-lg mb-4 text-center">
+              <div className="bg-black p-3 sm:p-4 rounded-lg mb-4 text-center">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   className="w-full max-h-80 object-cover rounded mb-4"
                 />
-                <div className="flex justify-center space-x-4">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={capturePhoto}
-                    className="bg-yellow-500 text-black font-bold px-6 py-2 rounded hover:bg-yellow-400 transition"
+                    className="bg-yellow-500 text-black font-bold py-2.5 px-4 rounded hover:bg-yellow-400 transition"
                   >
                     Capture Photo
                   </button>
                   <button
                     type="button"
                     onClick={stopCameraStream}
-                    className="bg-red-600 text-white font-bold px-6 py-2 rounded hover:bg-red-700 transition"
+                    className="bg-red-600 text-white font-bold py-2.5 px-4 rounded hover:bg-red-700 transition"
                   >
                     Cancel
                   </button>
@@ -294,7 +322,7 @@ export default function SubmitRequest() {
                 <button
                   type="button"
                   onClick={clearSelectedImage}
-                  className="mt-3 bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 rounded text-sm font-semibold transition"
+                  className="mt-3 w-full sm:w-auto bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded text-sm font-semibold transition"
                 >
                   Remove Photo
                 </button>
@@ -305,7 +333,7 @@ export default function SubmitRequest() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-green-700 text-white font-bold py-3 px-6 rounded hover:bg-green-800 transition flex items-center justify-center disabled:opacity-60"
+            className="w-full bg-green-700 text-white font-bold py-3.5 px-6 rounded hover:bg-green-800 transition flex items-center justify-center disabled:opacity-60"
           >
             {isSubmitting && (
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
