@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
 import { auth, db } from '@/lib/firebase'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
@@ -19,6 +19,16 @@ export default function Home() {
   
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  // Automatically clear all fields whenever the user lands on the login screen
+  useEffect(() => {
+    setFullName('')
+    setIdNumber('')
+    setPhoneNumber('')
+    setEmail('')
+    setPassword('')
+    setIsLoading(false)
+  }, [])
 
   const checkRoleAndRedirect = async (userEmail: string | null) => {
     if (userEmail === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
@@ -54,6 +64,11 @@ export default function Home() {
       } else if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password)
         toast.success('Login successful')
+        
+        // Clear credentials immediately on success
+        setEmail('')
+        setPassword('')
+        
         await checkRoleAndRedirect(email)
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password)
@@ -67,15 +82,19 @@ export default function Home() {
         })
 
         toast.success('Registration successful')
+        
+        // Clear all fields immediately on success
+        setFullName('')
+        setIdNumber('')
+        setPhoneNumber('')
+        setEmail('')
+        setPassword('')
+        
         await checkRoleAndRedirect(email)
       }
     } catch (error: any) {
       toast.error(error.message)
-    } finally {
       setIsLoading(false)
-      if (!isForgotPassword) {
-        setPassword('')
-      }
     }
   }
 
