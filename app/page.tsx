@@ -20,8 +20,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Automatically clear all fields whenever the user lands on the login screen
+  
   useEffect(() => {
+    setIsLogin(true)
+    setIsForgotPassword(false)
     setFullName('')
     setIdNumber('')
     setPhoneNumber('')
@@ -65,7 +67,7 @@ export default function Home() {
         await signInWithEmailAndPassword(auth, email, password)
         toast.success('Login successful')
         
-        // Clear credentials immediately on success
+       
         setEmail('')
         setPassword('')
         
@@ -83,7 +85,7 @@ export default function Home() {
 
         toast.success('Registration successful')
         
-        // Clear all fields immediately on success
+        
         setFullName('')
         setIdNumber('')
         setPhoneNumber('')
