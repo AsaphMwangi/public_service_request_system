@@ -10,8 +10,13 @@ import toast, { Toaster } from 'react-hot-toast'
 export default function Home() {
   const [isLogin, setIsLogin] = useState(true)
   const [isForgotPassword, setIsForgotPassword] = useState(false)
+  
+  const [fullName, setFullName] = useState('')
+  const [idNumber, setIdNumber] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -54,7 +59,10 @@ export default function Home() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password)
         
         await setDoc(doc(db, 'users', userCredential.user.uid), {
-          email: email,
+          fullName,
+          idNumber,
+          phoneNumber,
+          email,
           createdAt: Date.now()
         })
 
@@ -89,7 +97,56 @@ export default function Home() {
           {isForgotPassword ? 'Reset Password' : (isLogin ? 'Citizen Login' : 'Register Account')}
         </h2>
         
-        <form onSubmit={handleAuthentication} className="space-y-5">
+        <form onSubmit={handleAuthentication} className="space-y-4">
+          {!isLogin && !isForgotPassword && (
+            <>
+              <div>
+                <label className="block text-green-800 dark:text-gray-200 font-semibold mb-1 text-sm sm:text-base">
+                  Full Name
+                </label>
+                <input 
+                  type="text"
+                  placeholder="Enter your full name"
+                  className="w-full border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-green-800 dark:text-gray-200 font-semibold mb-1 text-sm sm:text-base">
+                  National ID Number
+                </label>
+                <input 
+                  type="text"
+                  placeholder="Enter your ID number"
+                  className="w-full border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={idNumber}
+                  onChange={(e) => setIdNumber(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-green-800 dark:text-gray-200 font-semibold mb-1 text-sm sm:text-base">
+                  Phone Number
+                </label>
+                <input 
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  className="w-full border border-green-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </>
+          )}
+
           <div>
             <label className="block text-green-800 dark:text-gray-200 font-semibold mb-1 text-sm sm:text-base">
               Email Address
@@ -125,7 +182,7 @@ export default function Home() {
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full bg-green-600 dark:bg-green-700 text-white font-bold py-3 px-4 rounded hover:bg-green-700 dark:hover:bg-green-600 transition duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full bg-green-600 dark:bg-green-700 text-white font-bold py-3 px-4 rounded hover:bg-green-700 dark:hover:bg-green-600 transition duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center mt-2"
           >
             {isLoading && (
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

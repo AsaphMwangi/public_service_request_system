@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState, FormEvent } from 'react'
-import { auth } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged, updatePassword, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast, { Toaster } from 'react-hot-toast'
@@ -19,6 +20,7 @@ interface RequestItem {
 
 export default function MyRequests() {
   const [requests, setRequests] = useState<RequestItem[]>([])
+  const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -29,6 +31,7 @@ export default function MyRequests() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        fetchUserProfile(user.uid)
         fetchUserRequests(user.uid)
       } else {
         router.push('/')
@@ -36,6 +39,18 @@ export default function MyRequests() {
     })
     return () => unsubscribe()
   }, [router])
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const docRef = doc(db, 'users', userId)
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists()) {
+        setUserName(docSnap.data().fullName || '')
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const fetchUserRequests = async (userId: string) => {
     try {
@@ -103,9 +118,16 @@ export default function MyRequests() {
       <Toaster />
       <div className="max-w-5xl mx-auto w-full">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-green-100 dark:border-gray-700">
-          <h1 className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-400 text-center sm:text-left">
-            My Service Requests
-          </h1>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-400 text-center sm:text-left">
+              My Service Requests
+            </h1>
+            {userName && (
+              <p className="text-green-700 dark:text-gray-300 mt-1 font-semibold text-center sm:text-left">
+                Welcome, {userName}
+              </p>
+            )}
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Link 
               href="/submit" 
